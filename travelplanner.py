@@ -15,11 +15,7 @@ import re
 import unicodedata
 from transformers import T5ForConditionalGeneration , T5Tokenizer
 
-import pandas as pd
-from datasets import Dataset
-from transformers import T5ForConditionalGeneration, T5Tokenizer, Trainer, TrainingArguments
-
-# --- 1. Load the NEW Prepared Data ---
+# 1. Load the NEW Prepared Data
 print("Loading the prepared training dataset...")
 try:
     df = pd.read_csv("/content/final_training_data (1).csv")
@@ -36,13 +32,13 @@ df = df.rename(columns={"query": "input_text", "plan": "target_text"})
 dataset = Dataset.from_pandas(df[['input_text', 'target_text']])
 dataset = dataset.train_test_split(test_size=0.1, seed=42)
 
-# --- 2. Tokenizer and Model ---
+# 2. Tokenizer and Model
 model_name = "t5-small"
 print(f"Loading tokenizer and model for '{model_name}'...")
 tokenizer = T5Tokenizer.from_pretrained(model_name)
 model = T5ForConditionalGeneration.from_pretrained(model_name)
 
-# --- 3. Tokenize the Dataset ---
+# 3. Tokenize the Dataset
 def tokenize_function(examples):
     # For T5, it's good practice to add a prefix to the input.
     prefix = "generate travel plan: "
@@ -59,7 +55,7 @@ def tokenize_function(examples):
 print("Tokenizing the dataset...")
 tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
-# --- 4. Set Up Training ---
+# 4. Set Up Training
 training_args = TrainingArguments(
     output_dir="./results",
     num_train_epochs=10,  # Increased epochs for better learning on the new data
@@ -82,12 +78,12 @@ trainer = Trainer(
     eval_dataset=tokenized_datasets["test"],
 )
 
-# --- 5. Train the Model ---
+# 5. Train the Model
 print("\nStarting model training on the new data...")
 trainer.train()
 print("Training complete.")
 
-# --- 6. Save the Final Model ---
+# 6. Save the Final Model
 final_model_path = "./t5-travel-planner-finetuned"
 print(f"Saving the fine-tuned model to '{final_model_path}'...")
 trainer.save_model(final_model_path)
